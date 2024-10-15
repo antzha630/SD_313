@@ -1,0 +1,145 @@
+---
+title: "Homework 2"
+author: "Anthony Zhang - SDS 313 UT Austin"
+date: "2024-09-20"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60))
+
+#needed packages:
+library(ggplot2)
+library(kableExtra)
+```
+
+------------------------------------------------------------------------
+
+# **Introduction**
+
+I am investigating the prevalance of leprosy in different countries and regions all around the world. Also, I am seeing if there is a relationship between the leprosy cases per 100k people and the GDB in billions. 
+
+# **1. Question 1**
+
+**Which country had the highest number of new leprosy cases in 2022? Why is it not a fair comparison to look at the raw number of cases when comparing prevalence of the disease across different countries? **
+
+The country that had the highest number of new leprosy cases in 2022 is India. It is not a fair comparison to look at the raw number of cases when comparing prevalence of the disease across different countries because different countries have different populations. It is expected for a country with a higher population to have a higher raw number of cases. Instead, comparing the prevalence rate or the proportion of the new cases / the population is a better indicator of prevalence of disease in that country since it accounts for the population too. Essentially, 100 people getting leprosy in a small country is a bigger deal than 100 people getting leprosy in a country with a high population.
+
+```{r}
+#reading files
+leprosy <- read.csv('Homework2_leprosy.csv')
+# which row number had the most cases total
+# which gives the row number for the condition
+x <- leprosy$New_Cases 
+y <- max(leprosy$New_Cases, na.rm = TRUE)
+z <- which(x == y)
+leprosy[z,]
+
+#make subset which is clean without the NA values
+leprosy_clean <- na.omit(leprosy)
+
+#making a new column for the diease prevalance rate
+leprosy_clean$proportion <- (leprosy_clean[,"New_Cases"] / leprosy_clean[, "Population"]) * 100
+
+#putting countries data in 1st column and prevalance rate data in second column
+countries <- c(leprosy_clean$Country)
+proportion <- c(leprosy_clean$proportion)
+leprosy_proportion <- data.frame(Country = countries, Proportion = proportion)
+
+#setting column names
+colnames(leprosy_proportion) <- c('Country','Proportion')
+leprosy_proportion$Proportion<- round(leprosy_proportion$Proportion, 2)
+
+
+#Output table:
+kable_classic(kbl(leprosy_proportion,caption = "Leprosy Prevalance Rate"),full_width = FALSE)
+
+```
+
+
+The first table is a snippet of row 76 of the leprosy dataset. It shows what kind of data the country with the highest number of new leprosy cases in 2022 had. Here, we can see that it is in the region of Asia / Pacific, has a code of IND, has a population of 1399179585, has a GDP of 3176.295, has a land area of 1147955, and has a count of 103819 new cases.
+
+This second table shows the prevalance rate of leprosy in all the countries. The prevalance rate is the amount of new cases divided by the population size. 
+
+
+
+# **2. Question 2** 
+
+**Create a new variable in the dataset that provides the leprosy cases per 100K people in each country. Graph this new variable’s distribution and provide the relevant summary statistics inline within a short paragraph describing the distribution.**
+
+```{r fig.height=5, fig.width=7}
+#create a new column for a which is the leprosy cases per 100k people in each country
+leprosy_clean$a <- (leprosy_clean$New_Cases / leprosy_clean$Population) * 100000
+
+#create histogram of leprosy cases per 100k in each country
+hist(leprosy_clean$a,main='Histogram of Leprosy Cases per 100k in each Country',xlab='Leprosy per 100k in each Country',ylab = 'Frequency',col='Blue',xlim=c(0,35), ylim = c(0,150))
+#get median of that column and round with 2 digits
+round(median(leprosy_clean$a), digits=2)
+round(fivenum(leprosy_clean$a), digits = 2)
+round(IQR(leprosy_clean$a), digits = 2)
+```
+
+The distribution of the histogram of leprosy cases for every 100k people versus its frequency is skewed right. A right skewed histogram means that many countries have very few leprosy cases per 100k while a few countries have a high amount of leprosy cases per 100k. Therefore, I will use the median of `r round(median(leprosy_clean$a), digits=2)` as the center measurement and the IQR of `r round(IQR(leprosy_clean$a), digits = 2)` as the spread measurement. Median and IQR are used as the center measurement and spread measurement for skewed distributions because it isn’t as affected by outliers in a dataset. Lastly, I printed the 5 number summary of minimum, Q1, median, Q3, and maximum in order to give more information about the graph. 
+Here is the 5 number summary:
+`r round(IQR(leprosy_clean$a), digits = 2)`
+
+# **3. Question 3** 
+
+**We want to compare cases per 100K across the different regions in this dataset.  In a single plot output, create a graph that shows the distribution of cases per 100K split by region. Output a nicely formatted table that provides the region name, number of countries in that region, and the median cases per 100K for each region.  Include a short paragraph summarizing differences in leprosy prevalence across regions.**
+
+```{r fig.height=5, fig.width=7}
+# make a boxplot of region vs leprosy cases per 100k
+boxplot(leprosy_clean$a ~ leprosy_clean$Region,
+        main = "Boxplot of Leprosy Cases per 100K",
+        xlab = "Region",
+        ylab = "Leprosy Cases / 100K",
+        col = "lightblue") 
+
+#Create data frame of table:
+mytable_count <- aggregate(Country ~ Region, data = leprosy_clean, length) 
+mytable_med <- aggregate(a~Region, data=leprosy_clean, median)
+
+#merge those tables into one table
+mytable <- merge(mytable_count, mytable_med, by = "Region")
+#Rename columns and round values:
+colnames(mytable) <- c('Region','Number of Countries','Median of Cases / 100k')
+mytable$'Number of Countries' <- round(mytable$'Number of Countries', 2)
+mytable$'Median of Cases / 100k' <- round(mytable$'Median of Cases / 100k', 2)
+
+#Output table:
+kable_classic(kbl(mytable,caption = "Number of Countries and Median of Cases / 100k"),full_width = FALSE)
+
+```
+
+This boxplot shows the leprosy cases per 100k for each region. It shows that Africa and Asia / Pacific have a higher median of leprosy cases per 100k compared to the other listed regions. Also, Asia has the largest IQR and whiskers meaning it has a broad amount of cases. All of the regions listed have a decent amount of outliers as shown by the dots.
+
+The table shows the region, number of countries in that region, and the median of cases per 100k for that region. Africa had the most number of countries in that region while the Americas, Asia / Pacific, and Europe had around the same amount of countries in that region. Africa and Asia / Pacific had a significantly higher median of Cases per 100k people compared to the other regions. The Americas, Europe, and Middle East all had a relatively low median of cases per 100k people. 
+
+# **4. Question 4** 
+
+**Investigate the relationship between cases per 100K and one of the other variables in the dataset (other than region) by making the appropriate bivariate graph and providing the relevant summary statistic inline within a short paragraph describing the relationship.**
+
+The leprosy cases per 100k people is not related to GDP in billions. There is a correlation coefficient of `r round(cor(leprosy_clean$a,leprosy_clean$GDP_billions),digits = 2)` between the cases per 100k people and the GDP in billions. Since this number is close to 0, there is no linear relationship between the two variables. Also, there is a negative relationship between the two variables because the correlation coefficient is negative. 
+
+```{r fig.height=5, fig.width=7}
+plot(leprosy_clean$a,leprosy_clean$GDP_billions,main='Cases / 100k vs GDP in billions',xlab='Cases / 100k',ylab='GDP (billions)',pch=20)
+# find correlation coefficient which describes how correlated the two vars are
+# around 0 for correlation coefficient means weak to no linear relationship between vars
+round(cor(leprosy_clean$a,leprosy_clean$GDP_billions),digits = 2)
+```
+
+This dot plot shows the relationship between leprosy cases per 100k people and GDP in billions. A lot of the points are in the bottom left corner meaning that most countries have low GDP and low leprosy cases per 100k. The points are pretty scattered meaning that there isn't a strong relationship between the two variables.
+
+# **5. Question 5** 
+
+**Write a brief conclusion to your analysis summarizing what you found. Include a hyperlink to the website for the International Leprosy Association for readers wanting more information about this disease.**
+
+I found that India had the highest number of leprosy cases in 2022. It is important to look at the prevalance rate or the proportion of new cases / population when comparing between different countries. This is because a larger amount of new cases is expected for countries with larger populations. Also, the histogram of leprosy cases per 100k people is right skewed, meaning that most countries have a pretty low number of leprosy cases per 100k people. As a result, I used median for the center measurement and IQR for the spread measurement. The median for leprosy cases per 100k people is higher the regions Africa and Asia/Pacific compared to the other countries. Africa had the most number of countries in that region while Americas, Asia / Pacific, Europe, and Middle East had around the same amount of countries in that region. Lastly, leprosy cases per 100k people is not related to the GDP in billions because of a correlation coefficient of about -0.2. 
+
+[International Leprosy Association](https://www.leprosymission.org/about-us/global-fellowship/?gad_source=1&gclid=CjwKCAjwl6-3BhBWEiwApN6_koE3bAdKxwYvDy7U-4Mt60xAZntdpcfmyNZdwwqhKo-nnW2ZXVgVWRoC7m8QAvD_BwE)
+
+
+------------------------------------------------------------------------
