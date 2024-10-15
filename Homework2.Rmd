@@ -58,7 +58,7 @@ leprosy_proportion$Proportion<- round(leprosy_proportion$Proportion, 2)
 kable_classic(kbl(leprosy_proportion,caption = "Leprosy Prevalance Rate"),full_width = FALSE)
 
 ```
-
+These tables are made using kableExtra
 
 The first table is a snippet of row 76 of the leprosy dataset. It shows what kind of data the country with the highest number of new leprosy cases in 2022 had. Here, we can see that it is in the region of Asia / Pacific, has a code of IND, has a population of 1399179585, has a GDP of 3176.295, has a land area of 1147955, and has a count of 103819 new cases.
 
